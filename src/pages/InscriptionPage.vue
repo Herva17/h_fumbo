@@ -1,7 +1,6 @@
 <template>
   <q-page class="register-page flex flex-center">
     <q-card class="q-pa-md q-card-shadow animated-card">
-      <!-- Titre -->
       <q-card-section>
         <div class="text-h4 text-center text-primary q-mb-sm">
           Créez un compte
@@ -13,7 +12,7 @@
         <q-form @submit="register">
           <q-input
             v-model="form.nom"
-            label="Username"
+            label="Nom"
             outlined
             dense
             class="q-mb-md"
@@ -25,51 +24,37 @@
             dense
             class="q-mb-md"
           />
-
           <q-input
             v-model="form.email"
-            type="email"
             label="Email"
+            type="email"
             outlined
             dense
             class="q-mb-md"
           />
           <q-input
             v-model="form.password"
-            type="password"
             label="Mot de passe"
+            type="password"
             outlined
             dense
             class="q-mb-md"
           />
-          <!-- <q-input
-            v-model="form.confirmPassword"
-            type="password"
-            label="Confirmer le mot de passe"
-            outlined
-            dense
-            class="q-mb-md"
-          /> -->
-
-          <!-- Champ biographie -->
           <q-input
-            v-model="form.prenom"
-            type="texte"
+            v-model="form.biographie"
             label="Biographie"
             outlined
             dense
             class="q-mb-md"
           />
-
-          <!-- Champ Nationalité -->
           <q-select
             v-model="form.nationalite"
             label="Nationalité"
             outlined
             dense
             :options="nationalites"
-            option-label="nom"
-            option-value="code"
+            option-label="nom_nationalite"
+            option-value="id_nationalite"
             emit-value
             map-options
           >
@@ -77,12 +62,12 @@
               <q-item v-bind="scope.itemProps">
                 <q-item-section avatar>
                   <q-img
-                    :src="scope.opt.drapeau"
+                    :src="scope.opt.image"
                     style="width: 24px; height: 16px"
                   />
                 </q-item-section>
                 <q-item-section>
-                  {{ scope.opt.nom }}
+                  {{ scope.opt.nom_nationalite }}
                 </q-item-section>
               </q-item>
             </template>
@@ -94,68 +79,52 @@
             color="primary"
             unelevated
             class="full-width q-mt-md"
+            :loading="isLoading"
           />
         </q-form>
+        
+        <!-- Affichage des messages d'erreur ou de succès -->
+        <div v-if="error" class="text-negative q-mt-md">{{ error }}</div>
+        <div v-if="successMessage" class="text-positive q-mt-md">{{ successMessage }}</div>
       </q-card-section>
-
-      <!-- Lien de connexion -->
-      <q-card-actions align="center">
-        <q-btn
-          flat
-          label="Vous avez déjà un compte ? Se connecter"
-          color="primary"
-          @click="redirectToLogin"
-        />
-      </q-card-actions>
     </q-card>
   </q-page>
 </template>
 
-<script>
-import { ref } from "vue";
-import { useRouter } from "vue-router";
+<script setup>
+import { ref, computed, onMounted } from 'vue';
+import { useInscriptionStore } from '../stores/inscriptionStore.js';
+import { useNationalitesStore } from '../stores/nationalitesStore.js';
 
-export default {
-  name: "RegisterPage",
-  setup() {
-    const router = useRouter();
-    const form = ref({
-      nom: "",
-      prenom: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      nationalite: null,
-    });
+// Initialisation du store
+const inscriptionStore = useInscriptionStore();
+const nationalitesStore = useNationalitesStore();
 
-    const nationalites = [
-      { code: "sn", nom: "Sénégal", drapeau: "https://flagcdn.com/w40/sn.png" },
-      {
-        code: "ci",
-        nom: "Côte d'Ivoire",
-        drapeau: "https://flagcdn.com/w40/ci.png",
-      },
-      { code: "ma", nom: "Maroc", drapeau: "https://flagcdn.com/w40/ma.png" },
-      { code: "tn", nom: "Tunisie", drapeau: "https://flagcdn.com/w40/tn.png" },
-      { code: "dz", nom: "Algérie", drapeau: "https://flagcdn.com/w40/dz.png" },
-    ];
+// Formulaire réactif
+const form = ref({
+  nom: '',
+  prenom: '',
+  email: '',
+  password: '',
+  biographie: '',
+  nationalite: null,
+});
 
-    const register = () => {
-      alert("Inscription en cours...");
-      // Implémentation de l'inscription avec Firebase ou autre
-    };
+// Chargement des nationalités au montage du composant
+onMounted(() => {
+  nationalitesStore.fetchNationalites();
+});
 
-    const redirectToLogin = () => {
-      router.push("/connection");
-    };
+// Computed properties pour les nationalités et les états de chargement
+const nationalites = computed(() => nationalitesStore.getNationalites);
+const isLoading = computed(() => inscriptionStore.getIsLoading);
+const error = computed(() => inscriptionStore.getError);
+const successMessage = computed(() => inscriptionStore.getSuccessMessage);
 
-    return {
-      form,
-      nationalites,
-      register,
-      redirectToLogin,
-    };
-  },
+// Méthodes
+const register = () => {
+  // Envoi des données du formulaire au store pour inscription
+  inscriptionStore.registerUser(form.value);
 };
 </script>
 
